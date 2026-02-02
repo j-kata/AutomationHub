@@ -1,4 +1,5 @@
 using AutomationHub.Controllers.DTOs;
+using AutomationHub.Core.Interfaces;
 using AutomationHub.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,7 +7,7 @@ namespace AutomationHub.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class EventsController : ControllerBase
+public class EventsController(IEventProcessor eventProcessor) : ControllerBase
 {
     [HttpPost]
     public IActionResult CreateEvent([FromBody] EventCreateDto dto)
@@ -16,6 +17,9 @@ public class EventsController : ControllerBase
 
         var domainEvent = DomainEvent.Create(type: eventType, source: dto.Source, payload: dto.Payload);
 
-        return CreatedAtAction(nameof(CreateEvent), new { id = domainEvent.Id }, domainEvent);
+        eventProcessor.ProcessEvent(domainEvent);
+
+        return Accepted(nameof(CreateEvent), new { id = domainEvent.Id });
     }
 }
+
