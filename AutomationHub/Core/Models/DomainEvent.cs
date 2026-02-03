@@ -1,3 +1,5 @@
+using AutomationHub.Core.Models.Constants;
+
 namespace AutomationHub.Core.Models;
 
 public class DomainEvent
