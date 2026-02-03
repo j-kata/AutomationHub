@@ -1,6 +1,7 @@
 using AutomationHub.Controllers.DTOs;
 using AutomationHub.Core.Interfaces;
 using AutomationHub.Core.Models;
+using AutomationHub.Core.Models.Constants;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AutomationHub.Controllers;
