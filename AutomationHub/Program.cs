@@ -1,5 +1,6 @@
 using AutomationHub.Core.Interfaces;
 using AutomationHub.Core.Services;
+using AutomationHub.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<IEventProcessor, EventProcessor>();
+builder.Services.AddScoped<IRuleRepository, RuleRepository>();
 
 var app = builder.Build();
 

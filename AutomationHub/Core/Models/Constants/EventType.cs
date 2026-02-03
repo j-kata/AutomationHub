@@ -1,4 +1,4 @@
-namespace AutomationHub.Core.Models;
+namespace AutomationHub.Core.Models.Constants;
 
 public enum EventType
 {
