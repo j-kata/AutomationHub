@@ -3,7 +3,7 @@ using AutomationHub.Core.Models;
 
 namespace AutomationHub.Core.Services;
 
-public class EventProcessor(IRuleRepository ruleRepository) : IEventProcessor
+public class EventProcessor(IRuleRepository ruleRepository, IActionRegistry actionRegistry) : IEventProcessor
 {
     public async void ProcessEvent(DomainEvent domainEvent)
     {
@@ -20,7 +20,10 @@ public class EventProcessor(IRuleRepository ruleRepository) : IEventProcessor
 
             foreach (var action in rule.Actions)
             {
-                Console.WriteLine($"    → Action: {action.ActionType}");
+                if (actionRegistry.GetActionHandler(action.ActionType) is not IActionHandler actionHandler)
+                    Console.WriteLine($"! No handler registered for action type {action.ActionType}");
+                else
+                    await actionHandler.Execute(action, domainEvent);
             }
         }
     }
