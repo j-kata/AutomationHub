@@ -4,5 +4,5 @@ namespace AutomationHub.Core.Interfaces;
 
 public interface IEventProcessor
 {
-    void ProcessEvent(DomainEvent domainEvent);
+    Task ProcessEvent(DomainEvent domainEvent);
 }
