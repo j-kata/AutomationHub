@@ -11,6 +11,7 @@ public class RuleActionConfiguration : IEntityTypeConfiguration<RuleAction>
 
     public void Configure(EntityTypeBuilder<RuleAction> builder)
     {
+        builder.ToTable("RuleActions");
         builder.HasKey(a => a.Id);
         builder.Property(a => a.ActionType)
             .HasMaxLength(50)

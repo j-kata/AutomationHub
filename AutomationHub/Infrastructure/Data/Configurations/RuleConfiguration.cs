@@ -10,6 +10,7 @@ public class RuleConfiguration : IEntityTypeConfiguration<Rule>
 {
     public void Configure(EntityTypeBuilder<Rule> builder)
     {
+        builder.ToTable("Rules");
         builder.HasKey(r => r.Id);
         builder.Property(r => r.EventType)
             .HasMaxLength(50)
