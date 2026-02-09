@@ -1,7 +1,7 @@
 using AutomationHub.Core.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace AutomationHub.Infrastructure.Data;
+namespace AutomationHub.Infrastructure.Data.Contexts;
 
 public class ApplicationContext(DbContextOptions<ApplicationContext> options) : DbContext(options)
 {

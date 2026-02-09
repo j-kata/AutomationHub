@@ -1,4 +1,4 @@
-using AutomationHub.Infrastructure.Data;
+using AutomationHub.Infrastructure.Data.Contexts;
 using Microsoft.EntityFrameworkCore;
 
 namespace AutomationHub.Infrastructure.Extensions;
