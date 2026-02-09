@@ -14,6 +14,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddScoped<IEventProcessor, EventProcessor>();
 builder.Services.AddScoped<IRuleRepository, RuleRepository>();
 builder.Services.AddActionHandlers();
+builder.Services.AddApplicationContext(builder.Configuration);
 
 var app = builder.Build();
 
