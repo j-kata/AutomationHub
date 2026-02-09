@@ -18,6 +18,12 @@ builder.Services.AddApplicationContext(builder.Configuration);
 
 var app = builder.Build();
 
+// Seed database in development
+if (app.Environment.IsDevelopment())
+{
+    await app.Services.SeedDatabaseAsync();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
