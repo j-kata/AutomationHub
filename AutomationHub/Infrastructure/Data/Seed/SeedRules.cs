@@ -1,38 +1,13 @@
-using AutomationHub.Core.Interfaces;
 using AutomationHub.Core.Models;
 using AutomationHub.Core.Models.Constants;
 
-namespace AutomationHub.Infrastructure.Persistence;
+namespace AutomationHub.Infrastructure.Data.Seed;
 
-public class RuleRepository : IRuleRepository
+public static class SeedRules
 {
-    private readonly List<Rule> _rules = [];
-
-    public RuleRepository()
-    {
-        _rules = GenerateRules();
-    }
-
-    public Task<IEnumerable<Rule>> GetRulesForEvent(EventType eventType, string? source)
-    {
-        var rules = _rules
-            .Where(r => r.EventType == eventType)
-            .Where(r => r.Source == null ||
-                        r.Source == "*" ||
-                        r.Source == source
-            )
-            .OrderByDescending(r => r.Priority);
-
-        return Task.FromResult<IEnumerable<Rule>>(rules);
-    }
-
-    private static List<Rule> GenerateRules()
-    {
-        var globalRuleId = Guid.NewGuid();
-
-        return [
-            GenerateRule(
-                ruleId: globalRuleId,
+    public static List<Rule> GetDefaultRules() =>
+        [
+            CreateRule(
                 eventType: EventType.TemperatureReading,
                 source: null,
                 condition: "temperature > 50",
@@ -41,8 +16,7 @@ public class RuleRepository : IRuleRepository
                 message: "Extreme temperature detected!"
             ),
 
-            GenerateRule(
-                ruleId: Guid.NewGuid(),
+            CreateRule(
                 eventType: EventType.TemperatureReading,
                 source: "kitchen-sensor",
                 condition: "temperature > 30",
@@ -51,8 +25,7 @@ public class RuleRepository : IRuleRepository
                 message: "Kitchen temperature high"
             ),
 
-            GenerateRule(
-                ruleId: Guid.NewGuid(),
+            CreateRule(
                 eventType: EventType.TemperatureReading,
                 source: "bedroom-sensor",
                 condition: "temperature > 22",
@@ -61,8 +34,7 @@ public class RuleRepository : IRuleRepository
                 message: "Bedroom too warm for sleeping"
             ),
 
-            GenerateRule(
-                ruleId: globalRuleId,
+            CreateRule(
                 eventType: EventType.MotionDetected,
                 source: null,
                 condition: null,
@@ -71,11 +43,18 @@ public class RuleRepository : IRuleRepository
                 message: "Motion detected"
             ),
         ];
-    }
 
-    private static Rule GenerateRule(
-        Guid ruleId, EventType eventType, string? source, string? condition, Priority priority, ActionType actionType, string message)
+
+    private static Rule CreateRule(
+        EventType eventType,
+        string? source,
+        string? condition,
+        Priority priority,
+        ActionType actionType,
+        string message)
     {
+        var ruleId = Guid.NewGuid();
+
         return new()
         {
             Id = ruleId,
