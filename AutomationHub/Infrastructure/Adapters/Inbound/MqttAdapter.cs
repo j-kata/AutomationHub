@@ -15,11 +15,13 @@ public class MqttAdapter : IHostedService
     private readonly IMqttClient _mqttClient;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly MqttOptions _mqttOptions;
+    private readonly IEnumerable<IMqttParser> _parsers;
 
-    public MqttAdapter(IOptions<MqttOptions> mqttOptions, IServiceScopeFactory scopeFactory)
+    public MqttAdapter(IOptions<MqttOptions> mqttOptions, IServiceScopeFactory scopeFactory, IEnumerable<IMqttParser> parsers)
     {
         _mqttOptions = mqttOptions.Value;
         _scopeFactory = scopeFactory;
+        _parsers = parsers;
 
         var mqttFactory = new MqttClientFactory();
         _mqttClient = mqttFactory.CreateMqttClient();
@@ -90,26 +92,15 @@ public class MqttAdapter : IHostedService
         var topic = args.ApplicationMessage.Topic;
         var payload = Encoding.UTF8.GetString(args.ApplicationMessage.Payload);
 
-        var parts = topic.Split('/');
-        if (parts.Length == 3 && parts[0] == "sensors")
+        foreach (var parser in _parsers)
         {
-            var sensorId = parts[1];
-            var measurement = parts[2];
-
-            var domainEvent = DomainEvent.Create(
-                type: EventType.TemperatureReading,
-                source: $"mqtt/{sensorId}",
-                payload: new Dictionary<string, object>
-                {
-                    ["temperature"] = int.Parse(payload),
-                    ["topic"] = topic
-                }
-            );
-
-            // Create a scope to get scoped services
-            using var scope = _scopeFactory.CreateScope();
-            var eventProcessor = scope.ServiceProvider.GetRequiredService<IEventProcessor>();
-            await eventProcessor.ProcessEvent(domainEvent);
+            if (parser.TryParse(topic, payload, out var domainEvent) && domainEvent != null)
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var eventProcessor = scope.ServiceProvider.GetRequiredService<IEventProcessor>();
+                await eventProcessor.ProcessEvent(domainEvent);
+                return;
+            }
         }
     }
 }

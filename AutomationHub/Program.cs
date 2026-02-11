@@ -4,6 +4,7 @@ using AutomationHub.Infrastructure.Extensions;
 using AutomationHub.Infrastructure.Data.Repositories;
 using AutomationHub.Infrastructure.Adapters.Inbound;
 using AutomationHub.Infrastructure.Options;
+using AutomationHub.Infrastructure.Adapters.Inbound.MqttParsers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,9 @@ builder.Services.AddActionHandlers();
 builder.Services.AddApplicationContext(builder.Configuration);
 builder.Services.AddOptions<MqttOptions>()
     .Bind(builder.Configuration.GetSection("Mqtt"));
+builder.Services.AddSingleton<IMqttParser, TemperatureSensorParser>();
+builder.Services.AddSingleton<IMqttParser, HumiditySensorParser>();
+builder.Services.AddSingleton<IMqttParser, MotionSensorParser>();
 builder.Services.AddHostedService<MqttAdapter>();
 
 var app = builder.Build();
