@@ -2,6 +2,7 @@ using AutomationHub.Core.Interfaces;
 using AutomationHub.Core.Services;
 using AutomationHub.Infrastructure.Extensions;
 using AutomationHub.Infrastructure.Data.Repositories;
+using AutomationHub.Infrastructure.Adapters.Inbound;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,7 @@ builder.Services.AddScoped<IEventProcessor, EventProcessor>();
 builder.Services.AddScoped<IRuleRepository, RuleDbRepository>();
 builder.Services.AddActionHandlers();
 builder.Services.AddApplicationContext(builder.Configuration);
+builder.Services.AddHostedService<MqttAdapter>();
 
 var app = builder.Build();
 
