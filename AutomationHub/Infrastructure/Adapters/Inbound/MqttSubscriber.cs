@@ -2,22 +2,20 @@
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using AutomationHub.Core.Interfaces;
-using AutomationHub.Core.Models;
-using AutomationHub.Core.Models.Constants;
 using AutomationHub.Infrastructure.Options;
 using Microsoft.Extensions.Options;
 using MQTTnet;
 
 namespace AutomationHub.Infrastructure.Adapters.Inbound;
 
-public class MqttAdapter : IHostedService
+public class MqttSubscriber : IHostedService
 {
     private readonly IMqttClient _mqttClient;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly MqttOptions _mqttOptions;
     private readonly IEnumerable<IMqttParser> _parsers;
 
-    public MqttAdapter(IOptions<MqttOptions> mqttOptions, IServiceScopeFactory scopeFactory, IEnumerable<IMqttParser> parsers)
+    public MqttSubscriber(IOptions<MqttOptions> mqttOptions, IServiceScopeFactory scopeFactory, IEnumerable<IMqttParser> parsers)
     {
         _mqttOptions = mqttOptions.Value;
         _scopeFactory = scopeFactory;

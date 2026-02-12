@@ -23,7 +23,7 @@ builder.Services.AddOptions<MqttOptions>()
 builder.Services.AddSingleton<IMqttParser, TemperatureSensorParser>();
 builder.Services.AddSingleton<IMqttParser, HumiditySensorParser>();
 builder.Services.AddSingleton<IMqttParser, MotionSensorParser>();
-builder.Services.AddHostedService<MqttAdapter>();
+builder.Services.AddHostedService<MqttSubscriber>();
 
 var app = builder.Build();
 
