@@ -6,6 +6,7 @@ using AutomationHub.Infrastructure.Adapters.Inbound;
 using AutomationHub.Infrastructure.Options;
 using AutomationHub.Infrastructure.Adapters.Inbound.MqttParsers;
 using AutomationHub.Infrastructure.Messaging;
+using AutomationHub.Infrastructure.Adapters.Outbound;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,8 @@ builder.Services.AddSingleton<IMqttParser, TemperatureSensorParser>();
 builder.Services.AddSingleton<IMqttParser, HumiditySensorParser>();
 builder.Services.AddSingleton<IMqttParser, MotionSensorParser>();
 builder.Services.AddHostedService<MqttSubscriber>();
+
+builder.Services.AddScoped<IEmailSender, SmtpSender>();
 
 
 var app = builder.Build();
