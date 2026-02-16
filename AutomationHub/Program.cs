@@ -21,6 +21,8 @@ builder.Services.AddActionHandlers();
 builder.Services.AddApplicationContext(builder.Configuration);
 builder.Services.AddOptions<MqttOptions>()
     .Bind(builder.Configuration.GetSection("Mqtt"));
+builder.Services.AddOptions<EmailOptions>()
+    .Bind(builder.Configuration.GetSection("Email"));
 
 builder.Services.AddSingleton<MqttConnection>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<MqttConnection>());
