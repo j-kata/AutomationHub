@@ -5,7 +5,7 @@ using AutomationHub.Core.Models.Constants;
 
 namespace AutomationHub.Infrastructure.Adapters.Outbound;
 
-public class MqttPublisher(IMqttConnection mqttConnection) : ActionHandlerBase
+public class MqttPublisher(IMqttConnection mqttConnection) : ActionHandlerBase, IMqttPublisher
 {
     protected override ActionType SupportedActionType => ActionType.PublishMqtt;
 
