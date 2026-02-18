@@ -8,6 +8,7 @@ namespace AutomationHub.Infrastructure.Messaging;
 
 public class MqttConnection : IMqttConnection, IHostedService
 {
+    private readonly ILogger<MqttConnection> _logger;
     private readonly IMqttClient _mqttClient;
     private readonly MqttOptions _mqttOptions;
     private readonly MqttClientOptions _mqttClientOptions;
@@ -20,8 +21,10 @@ public class MqttConnection : IMqttConnection, IHostedService
 
     public bool IsConnected => _mqttClient.IsConnected;
 
-    public MqttConnection(IOptions<MqttOptions> mqttOptions)
+    public MqttConnection(IOptions<MqttOptions> mqttOptions, ILogger<MqttConnection> logger)
     {
+        _logger = logger;
+
         _mqttOptions = mqttOptions.Value;
         _mqttClientOptions = BuildMqttOptions();
 
@@ -47,7 +50,19 @@ public class MqttConnection : IMqttConnection, IHostedService
     {
         if (IsConnected) return;
 
-        await _mqttClient.ConnectAsync(_mqttClientOptions, cancellationToken);
+        try
+        {
+            _logger.LogInformation("Attempting to connect to MQTT broker at {Host}:{Port}", _mqttOptions.Host, _mqttOptions.Port);
+
+            await _mqttClient.ConnectAsync(_mqttClientOptions, cancellationToken);
+
+            _logger.LogInformation("Successfully connected to MQTT broker at {Host}:{Port}", _mqttOptions.Host, _mqttOptions.Port);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to connect to MQTT broker at {Host}:{Port}. Reason: {Reason}", _mqttOptions.Host, _mqttOptions.Port, ex.Message);
+            throw;
+        }
     }
 
     public async Task DisconnectAsync(CancellationToken cancellationToken)
@@ -56,11 +71,15 @@ public class MqttConnection : IMqttConnection, IHostedService
 
         try
         {
+            _logger.LogInformation("Attempting to disconnect from MQTT broker at {Host}:{Port}", _mqttOptions.Host, _mqttOptions.Port);
+
             await _mqttClient.DisconnectAsync(cancellationToken: cancellationToken);
+
+            _logger.LogInformation("Successfully disconnected from MQTT broker at {Host}:{Port}", _mqttOptions.Host, _mqttOptions.Port);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore disconnect errors
+            _logger.LogWarning("Failed to disconnect from MQTT broker at {Host}:{Port}. Reason: {Reason}", _mqttOptions.Host, _mqttOptions.Port, ex.Message);
         }
     }
 
@@ -75,7 +94,7 @@ public class MqttConnection : IMqttConnection, IHostedService
     }
 
     // TODO: check duplicate topics and handle QoS levels
-    public Task SubscribeAsync(string[] topics, CancellationToken cancellationToken)
+    public async Task SubscribeAsync(string[] topics, CancellationToken cancellationToken)
     {
         if (!IsConnected)
             throw new InvalidOperationException("MQTT broker not connected.");
@@ -83,15 +102,27 @@ public class MqttConnection : IMqttConnection, IHostedService
         if (topics == null || topics.Length == 0)
             throw new ArgumentException("At least one topic is required");
 
-        var subscribeOptionsBuilder = new MqttClientSubscribeOptionsBuilder();
+        try
+        {
+            _logger.LogInformation("Subscribing to MQTT topics: {Topics}", string.Join(", ", topics));
 
-        foreach (var topic in topics)
-            subscribeOptionsBuilder.WithTopicFilter(t => t.WithTopic(topic));
+            var subscribeOptionsBuilder = new MqttClientSubscribeOptionsBuilder();
+            foreach (var topic in topics)
+                subscribeOptionsBuilder.WithTopicFilter(t => t.WithTopic(topic));
 
-        return _mqttClient.SubscribeAsync(subscribeOptionsBuilder.Build(), cancellationToken);
+            await _mqttClient.SubscribeAsync(subscribeOptionsBuilder.Build(), cancellationToken);
+
+            _logger.LogInformation("Successfully subscribed to MQTT topics: {Topics}", string.Join(", ", topics));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to subscribe to MQTT topics: {Topics}. Reason: {Reason}",
+                string.Join(", ", topics), ex.Message);
+            throw;
+        }
     }
 
-    public Task UnsubscribeAsync(string[] topics, CancellationToken cancellationToken)
+    public async Task UnsubscribeAsync(string[] topics, CancellationToken cancellationToken)
     {
         if (!IsConnected)
             throw new InvalidOperationException("MQTT broker not connected.");
@@ -99,15 +130,27 @@ public class MqttConnection : IMqttConnection, IHostedService
         if (topics == null || topics.Length == 0)
             throw new ArgumentException("At least one topic is required");
 
-        var unsubscribeOptionsBuilder = new MqttClientUnsubscribeOptionsBuilder();
+        try
+        {
+            _logger.LogInformation("Unsubscribing from MQTT topics: {Topics}", string.Join(", ", topics));
 
-        foreach (var topic in topics)
-            unsubscribeOptionsBuilder.WithTopicFilter(topic);
+            var unsubscribeOptionsBuilder = new MqttClientUnsubscribeOptionsBuilder();
+            foreach (var topic in topics)
+                unsubscribeOptionsBuilder.WithTopicFilter(topic);
 
-        return _mqttClient.UnsubscribeAsync(unsubscribeOptionsBuilder.Build(), cancellationToken);
+            await _mqttClient.UnsubscribeAsync(unsubscribeOptionsBuilder.Build(), cancellationToken);
+
+            _logger.LogInformation("Successfully unsubscribed from MQTT topics: {Topics}", string.Join(", ", topics));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to unsubscribe from MQTT topics: {Topics}. Reason: {Reason}",
+                string.Join(", ", topics), ex.Message);
+            throw;
+        }
     }
 
-    public Task PublishAsync(string topic, string payload, CancellationToken cancellationToken = default)
+    public async Task PublishAsync(string topic, string payload, CancellationToken cancellationToken = default)
     {
         if (!IsConnected)
             throw new InvalidOperationException("MQTT broker not connected.");
@@ -115,12 +158,25 @@ public class MqttConnection : IMqttConnection, IHostedService
         if (string.IsNullOrWhiteSpace(topic))
             throw new ArgumentException("Topic cannot be null or empty");
 
-        var message = new MqttApplicationMessageBuilder()
-            .WithTopic(topic)
-            .WithPayload(payload)
-            .Build();
+        try 
+        {
+             _logger.LogInformation("Publishing MQTT message to topic {Topic}", topic);
 
-        return _mqttClient.PublishAsync(message, cancellationToken);
+            var message = new MqttApplicationMessageBuilder()
+                .WithTopic(topic)
+                .WithPayload(payload)
+                .Build();
+
+            await _mqttClient.PublishAsync(message, cancellationToken);
+
+            _logger.LogInformation("Successfully published MQTT message to topic {Topic}", topic);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish MQTT message to topic {Topic}. Reason: {Reason}",
+                topic, ex.Message);
+            throw;
+        }
     }
 
     private MqttClientOptions BuildMqttOptions()
@@ -154,6 +210,8 @@ public class MqttConnection : IMqttConnection, IHostedService
         if (!e.ClientWasConnected || IsReconnecting)
             return;
 
+        _logger.LogWarning("MQTT connection lost. Reason: {Reason}. Starting reconnection attempts.", e.Reason);
+
         IsReconnecting = true;
 
         try
@@ -169,8 +227,10 @@ public class MqttConnection : IMqttConnection, IHostedService
                     await Task.Delay(delay);
                     await _mqttClient.ConnectAsync(_mqttClientOptions);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger.LogWarning("MQTT reconnection attempt failed. Reason: {Reason}. Retrying in {Delay} seconds.", ex.Message, delay.TotalSeconds);
+
                     delay *= 2;
                     if (delay > maxDelay)
                         delay = maxDelay;

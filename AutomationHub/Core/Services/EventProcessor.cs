@@ -4,19 +4,35 @@ using AutomationHub.Core.Models;
 
 namespace AutomationHub.Core.Services;
 
-public partial class EventProcessor(IRuleRepository ruleRepository, IActionRegistry actionRegistry) : IEventProcessor
+public partial class EventProcessor(ILogger<EventProcessor> logger, IRuleRepository ruleRepository, IActionRegistry actionRegistry) : IEventProcessor
 {
     public async Task ProcessEvent(DomainEvent domainEvent)
     {
-        Console.WriteLine($"Processing event {domainEvent.Id} of type {domainEvent.Type} from source {domainEvent.Source}");
+        logger.LogInformation("Processing event {EventId}", domainEvent.Id);
 
         // TODO: split into RuleEngine if needed
         var rules = await ruleRepository.GetRulesForEvent(domainEvent.Type, domainEvent.Source);
 
+        if (!rules.Any())
+        {
+            logger.LogInformation("No matching rules found for event {EventId}", domainEvent.Id);
+            return;
+        }
+
         foreach (var rule in rules)
         {
-            if (ConditionMet(rule.Condition, domainEvent))
-                await ApplyRuleActions(rule, domainEvent);
+            try
+            {
+                if (ConditionMet(rule.Condition, domainEvent))
+                {
+                    logger.LogInformation("Rule condition met for rule {RuleId}", rule.Id);
+                    await ApplyRuleActions(rule, domainEvent);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing rule {RuleId} for event {EventId}", rule.Id, domainEvent.Id);
+            }
         }
     }
 
@@ -40,10 +56,24 @@ public partial class EventProcessor(IRuleRepository ruleRepository, IActionRegis
     {
         foreach (var action in rule.Actions)
         {
-            if (actionRegistry.GetActionHandler(action.ActionType) is not IActionHandler actionHandler)
-                Console.WriteLine($"! No handler registered for action type {action.ActionType}");
+            if (actionRegistry.GetActionHandler(action.ActionType) is IActionHandler actionHandler)
+            {
+                try
+                {
+                    logger.LogInformation("Executing action {ActionId} of type {ActionType} for rule {RuleId}", action.Id, action.ActionType, rule.Id);
+                    await actionHandler.Execute(action, domainEvent);
+                    logger.LogInformation("Action {ActionId} succeeded", action.Id);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error executing action {ActionId} of type {ActionType} for rule {RuleId}", action.Id, action.ActionType, rule.Id);
+                }
+            }
             else
-                await actionHandler.Execute(action, domainEvent);
+            {
+                logger.LogWarning("No handler registered for action type {ActionType}", action.ActionType);
+            }
+
         }
     }
 
