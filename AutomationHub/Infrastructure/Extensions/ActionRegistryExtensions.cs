@@ -8,14 +8,14 @@ public static class ActionRegistryExtensions
 {
     public static IServiceCollection AddActionHandlers(this IServiceCollection services)
     {
-        services.AddSingleton<ConsoleLogger>();
+        services.AddSingleton<ConsoleActionHandler>();
         services.AddSingleton<MqttPublisher>();
         services.AddSingleton<SmtpSender>();
 
         services.AddSingleton<IActionRegistry>(sp =>
         {
             var registry = new ActionRegistry();
-            registry.RegisterAction(ActionType.LogEvent, sp.GetRequiredService<ConsoleLogger>());
+            registry.RegisterAction(ActionType.LogEvent, sp.GetRequiredService<ConsoleActionHandler>());
             registry.RegisterAction(ActionType.PublishMqtt, sp.GetRequiredService<MqttPublisher>());
             registry.RegisterAction(ActionType.SendEmail, sp.GetRequiredService<SmtpSender>());
             return registry;
