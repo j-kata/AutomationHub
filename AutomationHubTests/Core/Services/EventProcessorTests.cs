@@ -2,11 +2,10 @@ using AutomationHub.Core.Interfaces;
 using AutomationHub.Core.Models;
 using AutomationHub.Core.Models.Constants;
 using AutomationHub.Core.Services;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace AutomationHubTests;
+namespace AutomationHubTests.Core.Services;
 
 public class EventProcessorTests
 {
