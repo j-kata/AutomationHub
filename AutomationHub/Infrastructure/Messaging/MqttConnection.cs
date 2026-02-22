@@ -96,11 +96,11 @@ public class MqttConnection : IMqttConnection, IHostedService
     // TODO: check duplicate topics and handle QoS levels
     public async Task SubscribeAsync(string[] topics, CancellationToken cancellationToken)
     {
-        if (!IsConnected)
-            throw new InvalidOperationException("MQTT broker not connected.");
-
         if (topics == null || topics.Length == 0)
             throw new ArgumentException("At least one topic is required");
+
+        if (!IsConnected)
+            throw new InvalidOperationException("MQTT broker not connected.");
 
         try
         {
@@ -124,11 +124,11 @@ public class MqttConnection : IMqttConnection, IHostedService
 
     public async Task UnsubscribeAsync(string[] topics, CancellationToken cancellationToken)
     {
-        if (!IsConnected)
-            throw new InvalidOperationException("MQTT broker not connected.");
-
         if (topics == null || topics.Length == 0)
             throw new ArgumentException("At least one topic is required");
+
+        if (!IsConnected)
+            throw new InvalidOperationException("MQTT broker not connected.");
 
         try
         {
@@ -152,15 +152,15 @@ public class MqttConnection : IMqttConnection, IHostedService
 
     public async Task PublishAsync(string topic, string payload, CancellationToken cancellationToken = default)
     {
-        if (!IsConnected)
-            throw new InvalidOperationException("MQTT broker not connected.");
-
         if (string.IsNullOrWhiteSpace(topic))
             throw new ArgumentException("Topic cannot be null or empty");
 
-        try 
+        if (!IsConnected)
+            throw new InvalidOperationException("MQTT broker not connected.");
+
+        try
         {
-             _logger.LogInformation("Publishing MQTT message to topic {Topic}", topic);
+            _logger.LogInformation("Publishing MQTT message to topic {Topic}", topic);
 
             var message = new MqttApplicationMessageBuilder()
                 .WithTopic(topic)
