@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutomationHub", "AutomationHub\AutomationHub.csproj", "{CEEC7922-23A7-44AF-8034-E6139B96824A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutomationHubTests", "AutomationHubTests\AutomationHubTests.csproj", "{65FC6716-BACE-4023-BF9D-F49E80976AF7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutomationHubUnitTests", "AutomationHubUnitTests\AutomationHubUnitTests.csproj", "{65FC6716-BACE-4023-BF9D-F49E80976AF7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

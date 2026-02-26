@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
-namespace AutomationHubTests.Infrastructure.Adapters.Inbound;
+namespace AutomationHubUnitTests.Infrastructure.Adapters.Inbound;
 
 public class MqttSubscriberTests
 {
@@ -57,7 +57,7 @@ public class MqttSubscriberTests
 
         // Assert - verify SetMessageReceivedHandler was called
         _mqttConnection.Verify(
-            m => m.SetMessageReceivedHandler(It.IsAny<Func<string, string, Task>>()), 
+            m => m.SetMessageReceivedHandler(It.IsAny<Func<string, string, Task>>()),
             Times.Once);
     }
 
