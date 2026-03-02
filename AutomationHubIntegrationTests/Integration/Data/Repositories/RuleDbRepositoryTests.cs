@@ -10,13 +10,12 @@ namespace AutomationHubIntegrationTests.Integration.Data.Repositories;
 /// Integration tests for RuleDbRepository using real database.
 public class RuleDbRepositoryTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
-    private readonly DatabaseFixture _fixture = fixture;
 
     [Fact]
     public async Task GetRulesForEvent_NoRulesExist_ShouldReturnEmpty()
     {
         // Arrange
-        await using var dbContext = _fixture.CreateFreshDbContext();
+        await using var dbContext = fixture.CreateFreshDbContext();
         var repository = new RuleDbRepository(dbContext);
 
         // Act
@@ -30,7 +29,7 @@ public class RuleDbRepositoryTests(DatabaseFixture fixture) : IClassFixture<Data
     public async Task GetRulesForEvent_RuleExists_ShouldReturnRule()
     {
         // Arrange
-        await using var dbContext = _fixture.CreateFreshDbContext();
+        await using var dbContext = fixture.CreateFreshDbContext();
         var repository = new RuleDbRepository(dbContext);
 
         // Act
@@ -45,7 +44,7 @@ public class RuleDbRepositoryTests(DatabaseFixture fixture) : IClassFixture<Data
     public async Task GetRulesForEvent_MultipleRulesExist_ShouldReturnOrderedByPriority()
     {
         // Arrange
-        await using var dbContext = _fixture.CreateFreshDbContext();
+        await using var dbContext = fixture.CreateFreshDbContext();
         var repository = new RuleDbRepository(dbContext);
 
         // Act
@@ -61,7 +60,7 @@ public class RuleDbRepositoryTests(DatabaseFixture fixture) : IClassFixture<Data
     public async Task GetRulesForEvent_WithWildcardOrNullSource_ShouldReturnRules()
     {
         // Arrange
-        await using var dbContext = _fixture.CreateFreshDbContext();
+        await using var dbContext = fixture.CreateFreshDbContext();
         var repository = new RuleDbRepository(dbContext);
 
         // Act
@@ -76,7 +75,7 @@ public class RuleDbRepositoryTests(DatabaseFixture fixture) : IClassFixture<Data
     public async Task GetRulesForEvent_RuleWithActionsExists_ShouldLoadActions()
     {
         // Arrange
-        await using var dbContext = _fixture.CreateFreshDbContext();
+        await using var dbContext = fixture.CreateFreshDbContext();
         var repository = new RuleDbRepository(dbContext);
 
         // Act
