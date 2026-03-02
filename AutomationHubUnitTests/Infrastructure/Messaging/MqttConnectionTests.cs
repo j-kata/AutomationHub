@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
-namespace AutomationHubTests.Infrastructure.Messaging;
+namespace AutomationHubUnitTests.Infrastructure.Messaging;
 
 public class MqttConnectionTests
 {

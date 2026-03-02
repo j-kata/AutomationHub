@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace AutomationHubTests.Controllers;
+namespace AutomationHubUnitTests.Controllers;
 
 public class EventsControllerTests
 {

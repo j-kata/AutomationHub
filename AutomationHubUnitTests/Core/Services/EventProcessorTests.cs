@@ -5,7 +5,7 @@ using AutomationHub.Core.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace AutomationHubTests.Core.Services;
+namespace AutomationHubUnitTests.Core.Services;
 
 public class EventProcessorTests
 {

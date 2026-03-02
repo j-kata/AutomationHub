@@ -36,12 +36,20 @@ public class MqttConnection : IMqttConnection, IHostedService
     public Task<bool> TryPingAsync(CancellationToken cancellationToken = default) =>
         _mqttClient.TryPingAsync(cancellationToken);
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken = default)
     {
-        return ConnectAsync(cancellationToken);
+        try
+        {
+            await ConnectAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Initial MQTT connection failed. The application will start and retry in the background.");
+            _ = Task.Run(() => RetryConnectAsync(), CancellationToken.None);
+        }
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public Task StopAsync(CancellationToken cancellationToken = default)
     {
         return DisconnectAsync(cancellationToken);
     }
@@ -65,7 +73,7 @@ public class MqttConnection : IMqttConnection, IHostedService
         }
     }
 
-    public async Task DisconnectAsync(CancellationToken cancellationToken)
+    public async Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
         if (!IsConnected) return;
 
@@ -94,7 +102,7 @@ public class MqttConnection : IMqttConnection, IHostedService
     }
 
     // TODO: check duplicate topics and handle QoS levels
-    public async Task SubscribeAsync(string[] topics, CancellationToken cancellationToken)
+    public async Task SubscribeAsync(string[] topics, CancellationToken cancellationToken = default)
     {
         if (topics == null || topics.Length == 0)
             throw new ArgumentException("At least one topic is required");
@@ -122,7 +130,7 @@ public class MqttConnection : IMqttConnection, IHostedService
         }
     }
 
-    public async Task UnsubscribeAsync(string[] topics, CancellationToken cancellationToken)
+    public async Task UnsubscribeAsync(string[] topics, CancellationToken cancellationToken = default)
     {
         if (topics == null || topics.Length == 0)
             throw new ArgumentException("At least one topic is required");
@@ -205,13 +213,19 @@ public class MqttConnection : IMqttConnection, IHostedService
         return optionsBuilder.Build();
     }
 
-    private async Task HandleConnectionLost(MqttClientDisconnectedEventArgs e)
+    private Task HandleConnectionLost(MqttClientDisconnectedEventArgs e)
     {
         if (!e.ClientWasConnected || IsReconnecting)
-            return;
+            return Task.CompletedTask;
 
         _logger.LogWarning("MQTT connection lost. Reason: {Reason}. Starting reconnection attempts.", e.Reason);
+        _ = Task.Run(() => RetryConnectAsync());
+        return Task.CompletedTask;
+    }
 
+    private async Task RetryConnectAsync()
+    {
+        if (IsReconnecting) return;
         IsReconnecting = true;
 
         try
@@ -226,14 +240,12 @@ public class MqttConnection : IMqttConnection, IHostedService
                 {
                     await Task.Delay(delay);
                     await _mqttClient.ConnectAsync(_mqttClientOptions);
+                    _logger.LogInformation("Successfully reconnected to MQTT broker at {Host}:{Port}", _mqttOptions.Host, _mqttOptions.Port);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning("MQTT reconnection attempt failed. Reason: {Reason}. Retrying in {Delay} seconds.", ex.Message, delay.TotalSeconds);
-
-                    delay *= 2;
-                    if (delay > maxDelay)
-                        delay = maxDelay;
+                    delay = delay * 2 > maxDelay ? maxDelay : delay * 2;
                 }
             }
         }

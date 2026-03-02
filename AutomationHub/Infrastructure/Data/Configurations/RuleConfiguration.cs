@@ -1,4 +1,3 @@
-using System.Text.Json;
 using AutomationHub.Core.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -19,8 +18,7 @@ public class RuleConfiguration : IEntityTypeConfiguration<Rule>
         builder.Property(r => r.Source).HasMaxLength(200);
         builder.Property(r => r.Condition).HasMaxLength(500);
         builder.Property(r => r.Priority)
-            .HasMaxLength(50)
-            .HasConversion<string>()
+            .HasConversion<int>()
             .IsRequired();
         builder.HasMany(r => r.Actions)
             .WithOne()

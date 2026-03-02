@@ -2,10 +2,11 @@ using System.Text.Json;
 using AutomationHub.Core.Interfaces;
 using AutomationHub.Core.Models;
 using AutomationHub.Core.Models.Constants;
+using Microsoft.Extensions.Logging;
 
 namespace AutomationHub.Infrastructure.Adapters.Outbound;
 
-public class MqttPublisher(IMqttConnection mqttConnection) : ActionHandlerBase, IMqttPublisher
+public class MqttPublisher(IMqttConnection mqttConnection, ILogger<MqttPublisher> logger) : ActionHandlerBase, IMqttPublisher
 {
     protected override ActionType SupportedActionType => ActionType.PublishMqtt;
 
@@ -20,13 +21,18 @@ public class MqttPublisher(IMqttConnection mqttConnection) : ActionHandlerBase, 
         if (!action.Parameters.TryGetValue("payload", out var payloadObj))
             throw new ArgumentException("Missing 'payload' parameter.");
 
+        if (payloadObj is null || (payloadObj is string s && string.IsNullOrWhiteSpace(s)))
+            throw new ArgumentException("Invalid or empty 'payload' parameter.");
+
         try
         {
             var payload = payloadObj switch
             {
-                string s => s,
+                string str => str,
                 _ => JsonSerializer.Serialize(payloadObj)
             };
+
+            logger.LogInformation("Publishing MQTT message to topic {Topic} for event {EventId}", topic, domainEvent.Id);
             return mqttConnection.PublishAsync(topic.ToString()!, payload);
         }
         catch (Exception ex)

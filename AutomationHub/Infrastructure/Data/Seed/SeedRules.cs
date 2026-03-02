@@ -13,7 +13,16 @@ public static class SeedRules
                 condition: "temperature > 50",
                 priority: Priority.High,
                 actionType: ActionType.LogEvent,
-                message: "Extreme temperature detected!"
+                parameters: new Dictionary<string, object> { ["message"] = "Extreme temperature detected!" }
+            ),
+
+            CreateRule(
+                eventType: EventType.TemperatureReading,
+                source: "*",
+                condition: "temperature > 40",
+                priority: Priority.Medium,
+                actionType: ActionType.LogEvent,
+                parameters: new Dictionary<string, object> { ["message"] = "Extreme temperature detected!" }
             ),
 
             CreateRule(
@@ -21,26 +30,33 @@ public static class SeedRules
                 source: "kitchen-sensor",
                 condition: "temperature > 30",
                 priority: Priority.Medium,
-                actionType: ActionType.LogEvent,
-                message: "Kitchen temperature high"
+                actionType: ActionType.SendEmail,
+                parameters: new Dictionary<string, object> {
+                    ["to"] = "kitchen@example.com",
+                    ["subject"] = "Kitchen temperature high",
+                    ["body"] = "The temperature in the kitchen has exceeded the threshold."
+                }
             ),
 
             CreateRule(
                 eventType: EventType.TemperatureReading,
                 source: "bedroom-sensor",
                 condition: "temperature > 22",
-                priority: Priority.Medium,
+                priority: Priority.Low,
                 actionType: ActionType.LogEvent,
-                message: "Bedroom too warm for sleeping"
+                parameters: new Dictionary<string, object> { ["message"] = "Bedroom too warm for sleeping" }
             ),
 
             CreateRule(
                 eventType: EventType.MotionDetected,
-                source: null,
+                source: "living-room-sensor",
                 condition: null,
                 priority: Priority.Low,
-                actionType: ActionType.LogEvent,
-                message: "Motion detected"
+                actionType: ActionType.PublishMqtt,
+                parameters: new Dictionary<string, object> {
+                    ["topic"] = "action/motion_detected",
+                    ["payload"] = "Motion detected at {{timestamp}} from {{source}}"
+                }
             ),
         ];
 
@@ -51,7 +67,7 @@ public static class SeedRules
         string? condition,
         Priority priority,
         ActionType actionType,
-        string message)
+        Dictionary<string, object>? parameters = null)
     {
         var ruleId = Guid.NewGuid();
 
@@ -68,7 +84,7 @@ public static class SeedRules
                     Id = Guid.NewGuid(),
                     RuleId = ruleId,
                     ActionType = actionType,
-                    Parameters = new() { ["message"] = message }
+                    Parameters = parameters
                 }
             ]
         };
