@@ -71,7 +71,7 @@ public class DatabaseFixture : IAsyncLifetime
     /// Get a fresh DbContext instance and clear the database.
     /// Each test gets a clean slate.
     /// </summary>
-    public ApplicationContext CreateFreshDbContextAsync()
+    public ApplicationContext CreateFreshDbContext()
     {
         if (_options == null)
         {
@@ -83,7 +83,7 @@ public class DatabaseFixture : IAsyncLifetime
 
     public async Task SeedDataAsync()
     {
-        using var context = CreateFreshDbContextAsync();
+        using var context = CreateFreshDbContext();
         context.AddRange(SeedRules.GetDefaultRules());
         await context.SaveChangesAsync();
     }

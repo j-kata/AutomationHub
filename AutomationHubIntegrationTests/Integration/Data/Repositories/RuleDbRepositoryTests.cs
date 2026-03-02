@@ -1,11 +1,8 @@
-using AutomationHub.Core.Models;
 using AutomationHub.Core.Models.Constants;
 using AutomationHub.Infrastructure.Data.Repositories;
 using AutomationHub.Infrastructure.Data.Contexts;
 using FluentAssertions;
 using AutomationHubIntegrationTests.Common.Fixtures;
-using AutomationHub.Infrastructure.Data.Seed;
-using Docker.DotNet.Models;
 
 namespace AutomationHubIntegrationTests.Integration.Data.Repositories;
 
@@ -15,89 +12,75 @@ public class RuleDbRepositoryTests(DatabaseFixture fixture) : IClassFixture<Data
 {
     private readonly DatabaseFixture _fixture = fixture;
 
-    /// <summary>
-    /// Helper to get a fresh repository instance for each test.
-    /// Fixture clears database before returning the context.
-    /// </summary>
-    private (RuleDbRepository repository, ApplicationContext context) GetFreshTestContextAsync()
-    {
-        // Get a fresh DbContext with cleared data from the Testcontainers fixture
-        var testContext = _fixture.CreateFreshDbContextAsync();
-        return (new RuleDbRepository(testContext), testContext);
-    }
-
     [Fact]
     public async Task GetRulesForEvent_NoRulesExist_ShouldReturnEmpty()
     {
         // Arrange
-        var (_repository, dbContext) = GetFreshTestContextAsync();
+        await using var dbContext = _fixture.CreateFreshDbContext();
+        var repository = new RuleDbRepository(dbContext);
 
         // Act
-        var rules = await _repository.GetRulesForEvent(EventType.HumidityReading, "Sensor1");
+        var rules = await repository.GetRulesForEvent(EventType.HumidityReading, "Sensor1");
 
         // Assert
         rules.Should().BeEmpty();
-
-        await dbContext.DisposeAsync();
     }
 
     [Fact]
     public async Task GetRulesForEvent_RuleExists_ShouldReturnRule()
     {
         // Arrange
-        var (_repository, dbContext) = GetFreshTestContextAsync();
+        await using var dbContext = _fixture.CreateFreshDbContext();
+        var repository = new RuleDbRepository(dbContext);
 
         // Act
-        var result = await _repository.GetRulesForEvent(EventType.MotionDetected, "living-room-sensor");
+        var result = await repository.GetRulesForEvent(EventType.MotionDetected, "living-room-sensor");
 
         // Assert
         result.Should().HaveCount(1);
         result.First().Source.Should().Be("living-room-sensor");
-
-        await dbContext.DisposeAsync();
     }
 
     [Fact]
     public async Task GetRulesForEvent_MultipleRulesExist_ShouldReturnOrderedByPriority()
     {
         // Arrange
-        var (_repository, dbContext) = GetFreshTestContextAsync();
+        await using var dbContext = _fixture.CreateFreshDbContext();
+        var repository = new RuleDbRepository(dbContext);
 
         // Act
-        var result = await _repository.GetRulesForEvent(EventType.TemperatureReading, "bedroom-sensor");
+        var result = await repository.GetRulesForEvent(EventType.TemperatureReading, "bedroom-sensor");
 
         // Assert
         result.Should().HaveCount(3);
         result.First().Priority.Should().Be(Priority.High);
         result.Last().Priority.Should().Be(Priority.Low);
-
-        await dbContext.DisposeAsync();
     }
 
     [Fact]
     public async Task GetRulesForEvent_WithWildcardOrNullSource_ShouldReturnRules()
     {
         // Arrange
-        var (_repository, dbContext) = GetFreshTestContextAsync();
+        await using var dbContext = _fixture.CreateFreshDbContext();
+        var repository = new RuleDbRepository(dbContext);
 
         // Act
-        var result = await _repository.GetRulesForEvent(EventType.TemperatureReading, "AnySensor");
+        var result = await repository.GetRulesForEvent(EventType.TemperatureReading, "AnySensor");
 
         // Assert
         result.Should().HaveCount(2);
         result.All(r => r.Source == "*" || r.Source == null).Should().BeTrue();
-
-        await dbContext.DisposeAsync();
     }
 
     [Fact]
-    public async Task GetRulesForEvent_RuleWithActionsExists_ShouldLoadActionsAndTransactions()
+    public async Task GetRulesForEvent_RuleWithActionsExists_ShouldLoadActions()
     {
         // Arrange
-        var (_repository, dbContext) = GetFreshTestContextAsync();
+        await using var dbContext = _fixture.CreateFreshDbContext();
+        var repository = new RuleDbRepository(dbContext);
 
         // Act
-        var result = await _repository.GetRulesForEvent(EventType.MotionDetected, "living-room-sensor");
+        var result = await repository.GetRulesForEvent(EventType.MotionDetected, "living-room-sensor");
 
         // Assert
         result.Should().HaveCount(1);
@@ -105,7 +88,5 @@ public class RuleDbRepositoryTests(DatabaseFixture fixture) : IClassFixture<Data
         result.First().Actions.First().ActionType.Should().Be(ActionType.PublishMqtt);
         result.First().Actions.First().Parameters.Should().ContainKey("topic").WhoseValue.ToString().Should().Be("action/motion_detected");
         result.First().Actions.First().Parameters.Should().ContainKey("payload").WhoseValue.ToString().Should().Be("Motion detected at {{timestamp}} from {{source}}");
-
-        await dbContext.DisposeAsync();
     }
 }
