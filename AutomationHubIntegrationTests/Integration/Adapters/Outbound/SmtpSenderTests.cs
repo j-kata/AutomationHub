@@ -68,53 +68,6 @@ public class SmtpSenderTests(SmtpFixture smtpFixture) : IClassFixture<SmtpFixtur
     }
 
     /// <summary>
-    /// ExecuteAction must throw when Parameters is null.
-    /// </summary>
-    [Fact]
-    public async Task ExecuteAction_NullParameters_ShouldThrowArgumentException()
-    {
-        // Arrange
-        var sender = CreateSender();
-        var action = new RuleAction { ActionType = ActionType.SendEmail, Parameters = null };
-        var domainEvent = DomainEvent.Create(EventType.TemperatureReading, "Sensor1", []);
-
-        // Act & Assert
-        var res = () => sender.Execute(action, domainEvent);
-        await res.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("Parameters are required for SendEmail action.");
-    }
-
-    /// <summary>
-    /// ExecuteAction must throw when any required parameter is absent or empty.
-    /// </summary>
-    [Theory]
-    [InlineData("to", "", "s", "b")]                    // to is empty
-    [InlineData("subject", "to@test.local", "", "b")]   // subject is empty
-    [InlineData("body", "to@test.local", "s", "")]      // body is empty
-    public async Task ExecuteAction_MissingOrEmptyParameter_ShouldThrowArgumentException(string param, string to, string subject, string body)
-    {
-        // Arrange
-        var sender = CreateSender();
-        var action = new RuleAction
-        {
-            ActionType = ActionType.SendEmail,
-            Parameters = new Dictionary<string, object>
-            {
-                ["to"] = to,
-                ["subject"] = subject,
-                ["body"] = body
-            }
-        };
-        var domainEvent = DomainEvent.Create(EventType.TemperatureReading, "Sensor1", []);
-
-        // Act & Assert
-        var res = () => sender.Execute(action, domainEvent);
-        await res.Should().ThrowAsync<ArgumentException>()
-            .WithMessage($"Invalid or missing '{param}' parameter.");
-    }
-
-
-    /// <summary>
     /// When credentials are configured, Authenticate must be called.
     /// smtp4dev accepts any credentials so this verifies the email still arrives.
     /// </summary>
@@ -147,6 +100,56 @@ public class SmtpSenderTests(SmtpFixture smtpFixture) : IClassFixture<SmtpFixtur
         result.Should().NotBeNull();
         result!.Results.Should().ContainSingle(m => m.Subject == subject);
     }
+
+    /// <summary>
+    /// Execute must throw when Parameters is null.
+    /// </summary>
+    [Fact]
+    public async Task Execute_NullParameters_ShouldThrowArgumentException()
+    {
+        // Arrange
+        var sender = CreateSender();
+        var action = new RuleAction { ActionType = ActionType.SendEmail, Parameters = null };
+        var domainEvent = DomainEvent.Create(EventType.TemperatureReading, "Sensor1", []);
+
+        // Act & Assert
+        var res = () => sender.Execute(action, domainEvent);
+        await res.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("Parameters are required for SendEmail action.");
+    }
+
+    /// <summary>
+    /// Execute must throw when any required parameter is absent or empty.
+    /// </summary>
+    [Theory]
+    [InlineData("to", "", "s", "b")]                    // to is empty
+    [InlineData("subject", "to@test.local", null, "b")] // subject is null
+    [InlineData("body", "to@test.local", "s", "     ")] // body is whitespace
+    public async Task Execute_MissingOrEmptyParameter_ShouldThrowArgumentException(string param, string? to, string? subject, string? body)
+    {
+        // Arrange
+        var sender = CreateSender();
+
+        var parameters = new Dictionary<string, object?>
+        {
+            ["to"] = to,
+            ["subject"] = subject,
+            ["body"] = body
+        };
+
+        var action = new RuleAction
+        {
+            ActionType = ActionType.SendEmail,
+            Parameters = parameters!
+        };
+        var domainEvent = DomainEvent.Create(EventType.TemperatureReading, "Sensor1", []);
+
+        // Act & Assert
+        var res = () => sender.Execute(action, domainEvent);
+        await res.Should().ThrowAsync<ArgumentException>()
+            .WithMessage($"Invalid or missing '{param}' parameter.");
+    }
+
 
     // DTO types that mirror the SMTP4Dev paged-response format
     private sealed record Smtp4DevMessageList(
